@@ -1,0 +1,46 @@
+# cp .env.example .env && docker compose up --build
+# frontend http://localhost:3000 · API docs http://localhost:8000/docs
+#
+# Values come from .env via interpolation. The db service is for local dev only;
+# point DATABASE_URL at Supabase and the backend uses that instead.
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-grid}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grid}
+      POSTGRES_DB: ${POSTGRES_DB:-grid}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is not set - copy .env.example to .env}
+      DECISION_CUTOFF_HOUR_UTC: ${DECISION_CUTOFF_HOUR_UTC:-9}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+    ports:
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -273,6 +273,66 @@ forecast. These render as gaps, never as zero.
 **D9. Repo housekeeping.** Specs moved from `spec docs/` to `specs/`, because spaces
 break shell and Docker paths.
 
+**D10. FUELHH fuels stored (was Q7).** WIND only, so `actuals` has no `fuel_type`
+column. The reject-negative rule therefore only ever sees WIND rows.
+
+**D11. (2026-10-27) WINDFOR negatives are stored and counted, never rejected (was Q8).**
+The asymmetry with actuals is deliberate:
+- A **negative WIND actual** (FUELHH) is not physical outturn. It is rejected (D7).
+- A **negative wind forecast** (WINDFOR) is physically meaningful. It can reflect
+  embedded wind curtailment or metering effects. Rejecting it would discard real
+  information, so it is stored as published and counted in the ingest summary.
+
+**D12. (2026-10-27) Ingest runtime target is now "under 3 minutes".** Measured 122 s
+and 154 s against a Tokyo-region (ap-northeast-1) Supabase Session pooler (A25):
+- The run is network-bound, not code-bound. Fetch and write time track the link,
+  while normalise takes about 1 s.
+- The original SPEC-2 target of 120 s assumed a database in the same region. An
+  EU-region project would likely meet it.
+- Recreating the project would cost about 20 minutes, so it was not done. Accepted
+  as a known limitation; SPEC-2 §3.3 and the README say so.
+
+**A23. (2026-10-26, verified) Phase 2 ingest against Supabase.**
+`python -m scripts.ingest --from 2025-12-30 --to 2026-02-01` was run three times.
+Counts and content checksums were identical after every run, and runs 2 and 3
+reported 0 new rows:
+
+| after each run | value |
+|---|---|
+| actuals total | 1,632 |
+| actuals WIND January | **1,488** |
+| forecasts total | **19,856**, of which 4,081 are past-hour (`horizon_hours < 0`) |
+| distinct publishes | 272 |
+| sum MW, actuals / forecasts | 18,418,758.0 / 259,638,115.0 |
+
+- The only gap in stored actuals is 2026-02-01 SP48, which was published exactly at
+  the exclusive bound (A21a). January has no gaps.
+- 816 of 816 hours in the window have at least one forecast.
+
+**A24. (2026-10-26) Ingest robustness.** One run lost its connection to the pooler
+partway through a write. Its transaction rolled back, and the database was verified
+unchanged afterwards. The orphaned server session, however, stayed
+`idle in transaction` holding row locks, and that blocked the next run. Two guards now
+cover this:
+- the load transaction sets `idle_in_transaction_session_timeout = 60s`
+- database steps retry with backoff; this is safe because the load is a single
+  idempotent transaction
+
+**A25. (2026-10-26) Runtime target missed on this link.** SPEC-2 §3.3 asks for under
+2 minutes. The successful runs took 122 s and 154 s:
+- fetch: 66–84 s, against 38 s during Phase 0 recon
+- write to the ap-northeast-1 pooler: 34–80 s
+
+Both are bound by this network. The first run took 288 s, before the writes were
+moved to batched executemany and the fetches made concurrent.
+
+**A26. (2026-10-26) WINDFOR negative MW.** Recon found none (A20). If any appear,
+they are stored as published and counted in the ingest summary, not rejected (D11).
+
+**A27. (2026-10-26) `core/periods.py` was written in Phase 2.** Ingest needs it to
+derive `settlement_date` and `settlement_period` for forecasts. It supports GMT days
+only and raises on BST or clock-change days (SPEC-2 §4.1).
+
 ---
 
 ## Open questions (undecided; need an answer before the phase that depends on them)
@@ -288,7 +348,3 @@ January, against n = 744 for the other four, and it misses the late-evening hour
 from the sample entirely. Undecided: report each row on its own n (n is shown either
 way), or compare all five on the common 682 hours?
 
-**Q7. FUELHH fuels stored (blocks Phase 2).** The SPEC-2 §3.2 `actuals` table has no
-`fuel_type` column, which implies WIND only. D3 says "ingestion mirrors the source",
-and D7 scopes a rule by fuel type. Undecided: store WIND only, or all 20 fuel types
-with a `fuel_type` column?

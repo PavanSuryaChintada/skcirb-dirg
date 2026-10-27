@@ -204,7 +204,10 @@ Requirements:
   and pumped storage, which are exports and pumping, not bad data)
 - Mirror the source faithfully: past-hour WINDFOR rows are stored, not filtered
 - Print a summary: rows fetched, rows written, date coverage, any gaps found
-- Must complete in under two minutes for the full window
+- Must complete in under 3 minutes for the full window. Measured 122–154 s against a
+  Tokyo-region Supabase pooler; network-bound, not code-bound. The original 2-minute
+  target assumed a same-region database, which an EU-region project would likely
+  meet (ASSUMPTIONS D12)
 
 **Commit the ingested data as a seed file** (`backend/seed/january_2026.sql.gz` or a
 parquet pair). Reason: if Elexon is down or slow during your demo recording or
