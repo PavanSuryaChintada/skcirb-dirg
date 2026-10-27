@@ -1,4 +1,5 @@
 """Env-driven settings. Every value comes from the environment; nothing secret has a default."""
+from datetime import date
 from functools import lru_cache
 
 from pydantic import Field, SecretStr, field_validator
@@ -26,6 +27,9 @@ class Settings(BaseSettings):
     database_url: SecretStr
     decision_cutoff_hour_utc: int = Field(default=9, ge=0, le=23)
     cors_origins: str = "http://localhost:3000"
+    # delivery days the product evaluates (SPEC-1 §2)
+    study_from: date = date(2026, 1, 1)
+    study_to: date = date(2026, 1, 31)
 
     @field_validator("cors_origins")
     @classmethod

@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import meta
+from app.routers import day, export, meta, metrics
 
 
 def create_app() -> FastAPI:
@@ -13,8 +13,10 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,
         allow_methods=["GET"],
+        expose_headers=["Content-Disposition"],
     )
-    app.include_router(meta.router)
+    for module in (meta, day, metrics, export):
+        app.include_router(module.router)
     return app
 
 

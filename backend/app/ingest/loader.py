@@ -17,7 +17,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.core.periods import require_gmt_days, settlement_date, settlement_period
 from app.ingest import elexon_client
-from app.models import Actual, Base, Forecast
+from app.models import Actual, Base, Forecast, IngestRun
 
 WIND = "WIND"
 UTC = timezone.utc
@@ -146,6 +146,11 @@ def load(engine: Engine, actuals: list[dict], forecasts: list[dict]) -> tuple[di
         upsert(conn, Actual.__table__, actuals, ["start_time"])
         upsert(conn, Forecast.__table__, forecasts, ["start_time", "publish_time"])
         after = table_counts(conn)
+        conn.execute(
+            IngestRun.__table__.insert().values(
+                finished_at=datetime.now(UTC), actuals_rows=after["actuals"], forecasts_rows=after["forecasts"]
+            )
+        )
     return before, after
 
 

@@ -3,11 +3,11 @@
 Progress tracker for SPEC-2 §8. Each phase stops at its own check before the next starts.
 
 - [x] **Phase 0 — Recon.** Elexon endpoints curled, fixtures saved, shapes pinned in `ASSUMPTIONS.md`.
-- [ ] **Phase 1 — Skeleton.** Repo, Docker Compose, FastAPI `/api/health`, React placeholder, DB via `DATABASE_URL`.
-  Open item: `docker compose up --build` from a clean state still to be verified.
+- [x] **Phase 1 — Skeleton.** Repo, Docker Compose, FastAPI `/api/health`, React placeholder, DB via `DATABASE_URL`.
+  Verified from a clean state (no-cache images, `.env.example`, all containers healthy).
 - [x] **Phase 2 — Ingestion.** Both datasets in Supabase, idempotent (three runs, identical counts and checksums).
 - [x] **Phase 3 — Core logic.** `selection.py`, `alignment.py`, `metrics.py`, tests first; hand check matches to 6 dp.
-- [ ] **Phase 4 — API**
+- [x] **Phase 4 — API.** All SPEC-1 §6 endpoints + by-cutoff, by-tercile, scatter; every endpoint executed against Supabase.
 - [ ] **Phase 5 — Dashboard**
 - [ ] **Phase 6 — Accuracy screen**
 - [ ] **Phase 7 — Detail + export**

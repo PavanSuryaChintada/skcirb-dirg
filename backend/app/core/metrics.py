@@ -112,6 +112,69 @@ def compute_metrics(df: pd.DataFrame, group=None) -> MetricSet:
     )
 
 
+def energy_totals(df: pd.DataFrame) -> dict:
+    """Day or window totals on the hourly frame, over hours where both sides exist."""
+    _require_hourly(df)
+    valid = df.dropna(subset=["forecast_mw", "actual_mw"])
+    forecast_mwh = float(valid["forecast_mw"].sum()) * HOURS_PER_ROW
+    actual_mwh = float(valid["actual_mw"].sum()) * HOURS_PER_ROW
+    error_mwh = forecast_mwh - actual_mwh
+    return {
+        "n_hours": len(valid),
+        "forecast_gwh": forecast_mwh / 1000,
+        "actual_gwh": actual_mwh / 1000,
+        "error_gwh": error_mwh / 1000,
+        "error_pct": 100 * error_mwh / actual_mwh if actual_mwh else None,
+    }
+
+
+def compare(before: MetricSet, after: MetricSet) -> dict:
+    """Change in MAE and RMSE going from one metric set to another (negative = better)."""
+
+    def diff(a, b):
+        return None if a is None or b is None else b - a
+
+    return {"mae_change_mw": diff(before.mae_mw, after.mae_mw), "rmse_change_mw": diff(before.rmse_mw, after.rmse_mw)}
+
+
+def display_period_errors(periods: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    """Per-row e and |e| for the 48-period display table and error bars.
+
+    The one function allowed to touch a step-expanded frame: it never aggregates, so
+    it cannot inflate n. Every summary figure comes from the hourly frame instead.
+    """
+    e = periods["forecast_mw"] - periods["actual_mw"]
+    return e, e.abs()
+
+
+def error_band(forecast_mw: pd.Series, p5_mw: float | None, p95_mw: float | None) -> tuple[pd.Series, pd.Series]:
+    """Where the actual is expected to land, from historical error quantiles.
+
+    e = f - a, so a = f - e: the 90% range for the actual is [f - P95, f - P5].
+    """
+    if p5_mw is None or p95_mw is None:
+        missing = pd.Series(np.nan, index=forecast_mw.index)
+        return missing, missing
+    return forecast_mw - p95_mw, forecast_mw - p5_mw
+
+
+def error_histogram(df: pd.DataFrame, bin_mw: float = 500.0) -> list[dict]:
+    """Counts of e = f - a in fixed-width bins aligned to multiples of bin_mw. Valid pairs only."""
+    _require_hourly(df)
+    if bin_mw <= 0:
+        raise ValueError("bin_mw must be positive")
+    e = error_series(df).dropna()
+    if e.empty:
+        return []
+    lo = math.floor(e.min() / bin_mw) * bin_mw
+    hi = math.ceil(e.max() / bin_mw) * bin_mw
+    if hi == lo:
+        hi = lo + bin_mw
+    edges = np.arange(lo, hi + bin_mw / 2, bin_mw)
+    counts, _ = np.histogram(e, bins=edges)
+    return [{"lo_mw": float(a), "hi_mw": float(b), "count": int(c)} for a, b, c in zip(edges[:-1], edges[1:], counts)]
+
+
 def group_metrics(df: pd.DataFrame, by: str) -> list[MetricSet]:
     """Metric set per group. by = 'hour' (00-23), 'day', 'horizon' (bucketed) or 'tercile' (of actual MW)."""
     _require_hourly(df)
