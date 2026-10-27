@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { api, type Meta } from "./api/client";
 import { hourLabel } from "./format";
 import Accuracy from "./pages/Accuracy";
+import DailyDetail from "./pages/DailyDetail";
 import Dashboard from "./pages/Dashboard";
 import { useApi } from "./useApi";
 
 const PAGES = [
   { id: "day", label: "Day view" },
   { id: "accuracy", label: "Accuracy" },
+  { id: "detail", label: "Periods" },
 ] as const;
 type PageId = (typeof PAGES)[number]["id"];
 
@@ -76,6 +78,9 @@ export default function App() {
           <Dashboard date={date} cutoff={cutoff} />
         )}
         {meta.status === "ready" && cutoff !== null && page === "accuracy" && <Accuracy cutoff={cutoff} />}
+        {meta.status === "ready" && date !== null && cutoff !== null && page === "detail" && (
+          <DailyDetail date={date} cutoff={cutoff} />
+        )}
       </main>
     </div>
   );
