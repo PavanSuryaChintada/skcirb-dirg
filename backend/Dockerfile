@@ -1,10 +1,11 @@
 # --- build stage: install deps into a venv we can copy across ---
 FROM python:3.11-slim AS build
-ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_DEFAULT_TIMEOUT=120
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_DEFAULT_TIMEOUT=120
 RUN python -m venv /opt/venv
 ENV PATH=/opt/venv/bin:$PATH
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+# the cache mount keeps downloaded wheels between attempts; it never enters the image
+RUN --mount=type=cache,target=/root/.cache/pip pip install --retries 10 -r requirements.txt
 
 # --- runtime stage: slim image, non-root user ---
 FROM python:3.11-slim
