@@ -68,10 +68,16 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-[1180px] px-6 py-8">
-        {meta.status === "loading" && <p className="text-muted">Loading the January dataset…</p>}
+        {meta.status === "loading" && (
+          <p className="text-muted">
+            Loading the January dataset. The API sleeps when nobody has used it for a while, so the first load can take up
+            to a minute.
+          </p>
+        )}
         {meta.status === "failed" && (
           <p className="text-short">
-            Can't reach the API ({meta.message}). Check that the backend is running and that data has been ingested.
+            Can't reach the API ({meta.message}) after a minute of retries. Reload the page to try again; if it keeps
+            failing, check that the backend is running and that data has been ingested.
           </p>
         )}
         {meta.status === "ready" && date !== null && cutoff !== null && page === "day" && (

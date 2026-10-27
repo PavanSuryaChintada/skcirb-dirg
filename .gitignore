@@ -22,3 +22,6 @@ Thumbs.db
 
 # build logs
 *.log
+
+# vercel cli link
+.vercel/

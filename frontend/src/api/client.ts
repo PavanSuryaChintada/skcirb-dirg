@@ -88,12 +88,29 @@ export type DayResponse = {
   periods: Period[];
 };
 
+// The hosted API sleeps when idle and can drop or stall the first requests while it
+// wakes, so network failures and gateway errors are retried for about a minute.
+const RETRY_DELAYS_MS = [3000, 6000, 12000, 20000, 20000];
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchWithWake(url: string): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (![502, 503, 504].includes(res.status) || attempt >= RETRY_DELAYS_MS.length) return res;
+    } catch (err) {
+      if (attempt >= RETRY_DELAYS_MS.length) throw err;
+    }
+    await sleep(RETRY_DELAYS_MS[attempt]);
+  }
+}
+
 async function get<T>(path: string, params: Record<string, string | number | undefined> = {}): Promise<T> {
   const query = Object.entries(params)
     .filter(([, v]) => v !== undefined)
     .map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`)
     .join("&");
-  const res = await fetch(`${API_BASE_URL}${path}${query ? `?${query}` : ""}`);
+  const res = await fetchWithWake(`${API_BASE_URL}${path}${query ? `?${query}` : ""}`);
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
     try {

@@ -11,7 +11,7 @@ Progress tracker for SPEC-2 §8. Each phase stops at its own check before the ne
 - [x] **Phase 5 — Dashboard.** Verdict headline, four stat cards, forecast vs actual with P5–P95 band, shared-axis error bars, provenance; defaults to the worst day (28 Jan).
 - [x] **Phase 6 — Accuracy screen.** Bias-led headline, metric table, by-hour, cut-off lever, lead time (all vintages), histogram with P5/P50/P95, 45° scatter, terciles; figures match the API.
 - [x] **Phase 7 — Detail + export.** Sortable, filterable 48-row table and CSV download; missing forecasts are blank in both.
-- [ ] **Phase 8 — Deploy**
+- [x] **Phase 8 — Deploy.** Frontend https://skcirb-web.vercel.app, API https://skcirb-api.onrender.com (Render, not Heroku: D13); CORS = Vercel domain + localhost:3000; both load live data.
 - [ ] **Phase 9 — Docs**
 
 Run phases 4 through 9 back to back. After each phase print a one-line PHASE N DONE
