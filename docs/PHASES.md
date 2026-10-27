@@ -12,7 +12,7 @@ Progress tracker for SPEC-2 §8. Each phase stops at its own check before the ne
 - [x] **Phase 6 — Accuracy screen.** Bias-led headline, metric table, by-hour, cut-off lever, lead time (all vintages), histogram with P5/P50/P95, 45° scatter, terciles; figures match the API.
 - [x] **Phase 7 — Detail + export.** Sortable, filterable 48-row table and CSV download; missing forecasts are blank in both.
 - [x] **Phase 8 — Deploy.** Frontend https://skcirb-web.vercel.app, API https://skcirb-api.onrender.com (Render, not Heroku: D13); CORS = Vercel domain + localhost:3000; both load live data.
-- [ ] **Phase 9 — Docs**
+- [x] **Phase 9 — Docs.** README (all ten SPEC-2 §9 items incl. AI disclosure), ARCHITECTURE.md with Mermaid, ASSUMPTIONS finalised (D1–D15, A1–A30), SPEC-2 §11 checklist run.
 
 Run phases 4 through 9 back to back. After each phase print a one-line PHASE N DONE
 summary and continue. Only stop early if a phase fails its own check or hits a decision

@@ -291,6 +291,9 @@ and 154 s against a Tokyo-region (ap-northeast-1) Supabase Session pooler (A25):
   EU-region project would likely meet it.
 - Recreating the project would cost about 20 minutes, so it was not done. Accepted
   as a known limitation; SPEC-2 §3.3 and the README say so.
+- Confirmed 2026-10-27: from a fresh clone, the same ingest against the local
+  Postgres container took **20.7 s** (fetch 17.1 s, write 2.6 s), with identical
+  results. The extra time is the round trip to Tokyo, not the code.
 
 **D13. (2026-10-27) Backend hosted on Render, not Heroku.** Heroku no longer has a free
 tier; the project owner chose Render's free web service instead.
@@ -343,16 +346,53 @@ only and raises on BST or clock-change days (SPEC-2 §4.1).
 
 ---
 
-## Open questions (undecided; need an answer before the phase that depends on them)
+**D14. (2026-10-27) Screen 3 and CSV are per settlement period (was Q5).** Settled by
+the Phase 7 instruction: one row per settlement period. The forecast column carries the
+step-expanded hourly value. The screen caption says so, and the CSV has a
+`forecast_step_expanded` column. Missing forecasts are blank cells, never 0. No metric is
+computed from these rows.
 
-**Q5. Screen 3 and CSV resolution (blocks Phase 7).** SPEC-1 §5 asks for one row per
-settlement period, which means each row carries a step-expanded forecast. Undecided:
-keep per-SP rows with the expansion labelled, or switch the table and CSV to hourly
-rows?
+**D15. (2026-10-27) Cut-off comparison reports both samples (was Q6).** Each
+`by-cutoff` row carries `metrics` (every hour with a forecast at that cut-off, so
+n = 682 at 02:00 and 744 elsewhere) and `metrics_common_hours` (the 682 hours every
+cut-off covers). The chart and the 09:00 to 11:00 headline use the common hours, so
+the comparison is like with like. This was a judgement call during Phase 4, not a
+client decision; switching the chart to own-n is a one-line change.
 
-**Q6. Comparability across cut-offs (blocks Phase 4).** At the 02:00 cut-off, 22:00
-and 23:00 have no forecast (A19). That row of `by-cutoff` therefore has n = 682 for
-January, against n = 744 for the other four, and it misses the late-evening hours
-from the sample entirely. Undecided: report each row on its own n (n is shown either
-way), or compare all five on the common 682 hours?
+**A28. (2026-10-27, verified) The headline results, January 2026.** Hourly frame,
+n = 744, decision-time forecast at 09:00:
+
+| Figure | Value |
+|---|---|
+| Bias | +1,852 MW |
+| MAE | 2,142 MW |
+| RMSE | 2,612 MW |
+| nMAE | 18.5% |
+| P5 / P50 / P95 of error | −1,151 / +1,685 / +5,307 MW |
+| Largest miss | 6,870 MW at 2026-01-12 01:00 |
+| Energy error | +1,377.8 GWh |
+| Skill against persistence | 0.49 |
+| Worst day by MAE | 28 Jan (forecast 129 GWh high, +93%), the dashboard default |
+
+- **Cut-off lever:** on the 682 common hours, moving from 09:00 to 11:00 changes MAE
+  by −23 MW and RMSE by +5 MW. It is real but small; the bias is the bigger lever.
+- **Lead time:** with all forecast vintages, MAE rises from about 1.75 GW at 0–6 h to
+  about 2.3 GW beyond 24 h.
+- **Hand check:** `scripts.hand_verify` (raw SQL `DISTINCT ON` plus plain arithmetic)
+  matches `metrics.py` to 6 dp for 12 Jan: MAE 4,868.250000, RMSE 5,120.915700.
+
+**A29. (2026-10-27) The dashboard's P5–P95 band excludes the day being viewed.** The
+band is built from hourly errors on every other loaded day at the same cut-off, so a
+day is never judged by its own errors. It is shown around the forecast as
+`[f − P95, f − P5]`, the range where the actual landed on 90% of those hours.
+
+**A30. (2026-10-27) The bias is unexplained.** One plausible cause is that WINDFOR
+reflects unconstrained output while FUELHH outturn reflects curtailment (constraint
+actions). This is a hypothesis only; it has not been checked against constraint data.
+
+---
+
+## Open questions
+
+None open. Q1–Q8 are resolved as D1–D15 above.
 

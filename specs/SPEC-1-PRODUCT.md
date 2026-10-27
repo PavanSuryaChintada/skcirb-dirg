@@ -284,9 +284,9 @@ The quantified-error screen. This is where job 2 lives.
 
 - Sortable, filterable table, one row per settlement period for the selected day
 - Columns: SP, clock time, publishTime, horizon_h, forecast MW, actual MW, error MW, abs error MW
-- *Open (ASSUMPTIONS.md Q5):* per-SP rows carry a step-expanded forecast. Whether this
-  table and its CSV stay per SP (with the expansion labelled) or move to hourly rows
-  is not yet decided.
+- Per-SP rows carry the step-expanded hourly forecast, labelled on screen and in a
+  `forecast_step_expanded` CSV column. Missing forecasts are blank, never 0
+  (ASSUMPTIONS D14).
 - CSV export button. Energy traders live in Excel. This takes ten minutes to build
   and always lands well in a demo.
 

@@ -173,8 +173,9 @@ ingest runtime, and Render instead of Heroku. These are recorded as decisions D1
   reflects unconstrained output while metered outturn reflects curtailment. That is a
   hypothesis, not verified.
 - **Ingest runtime:** a full ingest takes 2–2.5 minutes (measured 122–154 s) because
-  the Supabase project is in Tokyo. The time is network-bound, not code-bound; an
-  EU-region database would likely bring it under 2 minutes.
+  the Supabase project is in Tokyo. The time is network-bound, not code-bound: against
+  the local Postgres container the same ingest takes about 21 seconds, and an EU-region
+  database would likely bring it under 2 minutes.
 - **Hosting:** the API is on Render's free plan instead of Heroku, which no longer has
   a free tier. It sleeps when idle.
 - Commit timestamps span about 22 hours of wall-clock time, including an overnight break.
