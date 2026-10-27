@@ -369,6 +369,10 @@ during evaluation is fatal and completely avoidable.
 - Env var `VITE_API_BASE_URL` pointing at the Heroku backend
 - Check the deployed build in incognito
 
+> **Revised 2026-10-27:** the backend is deployed to **Render** (`render.yaml`, Docker,
+> free plan, Singapore region) instead of Heroku, which no longer has a free tier
+> (ASSUMPTIONS D13). The Heroku steps below are kept for reference.
+
 **Backend → Heroku container**
 ```bash
 heroku container:login

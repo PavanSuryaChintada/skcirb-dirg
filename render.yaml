@@ -1,0 +1,18 @@
+# Render blueprint for the API. Replaces the Heroku container deploy in SPEC-2 §7:
+# Heroku has no free tier any more (ASSUMPTIONS D13). Same Docker image, binds to $PORT.
+services:
+  - type: web
+    name: skcirb-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: singapore # nearest Render region to the Tokyo (ap-northeast-1) Supabase project
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL # Supabase Session pooler URI with ?sslmode=require, set in the dashboard
+        sync: false
+      - key: CORS_ORIGINS # the Vercel domain plus http://localhost:3000, never "*"
+        sync: false
+      - key: DECISION_CUTOFF_HOUR_UTC
+        value: "9"

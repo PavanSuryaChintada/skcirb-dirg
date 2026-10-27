@@ -292,6 +292,14 @@ and 154 s against a Tokyo-region (ap-northeast-1) Supabase Session pooler (A25):
 - Recreating the project would cost about 20 minutes, so it was not done. Accepted
   as a known limitation; SPEC-2 §3.3 and the README say so.
 
+**D13. (2026-10-27) Backend hosted on Render, not Heroku.** Heroku no longer has a free
+tier; the project owner chose Render's free web service instead.
+- Same Docker image, same `$PORT` binding, `DATABASE_URL` as a config var (`render.yaml`).
+- Region Singapore, the nearest Render region to the Tokyo Supabase project.
+- The free plan sleeps when idle, like Heroku's old free dynos: hit the API once before
+  a demo.
+- The frontend stays on Vercel as specified.
+
 **A23. (2026-10-26, verified) Phase 2 ingest against Supabase.**
 `python -m scripts.ingest --from 2025-12-30 --to 2026-02-01` was run three times.
 Counts and content checksums were identical after every run, and runs 2 and 3
