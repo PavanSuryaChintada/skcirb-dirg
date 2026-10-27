@@ -8,7 +8,7 @@ Progress tracker for SPEC-2 §8. Each phase stops at its own check before the ne
 - [x] **Phase 2 — Ingestion.** Both datasets in Supabase, idempotent (three runs, identical counts and checksums).
 - [x] **Phase 3 — Core logic.** `selection.py`, `alignment.py`, `metrics.py`, tests first; hand check matches to 6 dp.
 - [x] **Phase 4 — API.** All SPEC-1 §6 endpoints + by-cutoff, by-tercile, scatter; every endpoint executed against Supabase.
-- [ ] **Phase 5 — Dashboard**
+- [x] **Phase 5 — Dashboard.** Verdict headline, four stat cards, forecast vs actual with P5–P95 band, shared-axis error bars, provenance; defaults to the worst day (28 Jan).
 - [ ] **Phase 6 — Accuracy screen**
 - [ ] **Phase 7 — Detail + export**
 - [ ] **Phase 8 — Deploy**

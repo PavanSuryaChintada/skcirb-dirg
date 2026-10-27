@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-cond: "IBM Plex Sans Condensed", "IBM Plex Sans", system-ui, sans-serif;
+
+  --color-paper: #f3f5f7;
+  --color-panel: #ffffff;
+  --color-ink: #142033;
+  --color-muted: #5b6878;
+  --color-rule: #d5dbe2;
+  --color-forecast: #2f5d9e;
+  /* error colours carry trading meaning: forecast too high leaves you short, too low leaves you long */
+  --color-short: #b97a12;
+  --color-long: #1b7f79;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum";
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-forecast);
+  outline-offset: 2px;
+}

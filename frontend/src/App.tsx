@@ -1,51 +1,117 @@
 import { useEffect, useState } from "react";
-import { API_BASE_URL, getHealth, type Health } from "./api/client";
+import { api, type Meta } from "./api/client";
+import { hourLabel } from "./format";
+import Dashboard from "./pages/Dashboard";
+import { useApi } from "./useApi";
 
-type State = { kind: "loading" } | { kind: "ready"; health: Health } | { kind: "failed"; message: string };
+const PAGES = [{ id: "day", label: "Day view" }] as const;
+type PageId = (typeof PAGES)[number]["id"];
+
+function pageFromHash(): PageId {
+  const id = window.location.hash.replace("#/", "");
+  return (PAGES.find((p) => p.id === id)?.id ?? "day") as PageId;
+}
 
 export default function App() {
-  const [state, setState] = useState<State>({ kind: "loading" });
+  const meta = useApi(api.meta, []);
+  const [page, setPage] = useState<PageId>(pageFromHash);
+  const [date, setDate] = useState<string | null>(null);
+  const [cutoff, setCutoff] = useState<number | null>(null);
 
   useEffect(() => {
-    getHealth()
-      .then((health) => setState({ kind: "ready", health }))
-      .catch((err: Error) => setState({ kind: "failed", message: err.message }));
+    const onHash = () => setPage(pageFromHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, []);
 
+  useEffect(() => {
+    if (meta.status === "ready") {
+      setDate((d) => d ?? meta.data.default_date);
+      setCutoff((c) => c ?? meta.data.default_cutoff_hour);
+    }
+  }, [meta]);
+
   return (
-    <main className="mx-auto max-w-2xl px-6 py-16 text-slate-800">
-      <h1 className="text-2xl font-semibold">Wind forecast accuracy</h1>
-      <p className="mt-1 text-slate-500">GB national wind · day-ahead procurement · January 2026</p>
+    <div className="min-h-screen">
+      <header className="border-b border-rule bg-panel">
+        <div className="mx-auto flex max-w-[1180px] flex-wrap items-end gap-x-10 gap-y-4 px-6 py-4">
+          <div>
+            <p className="font-cond text-xl font-semibold leading-none">Wind forecast accuracy</p>
+            <p className="mt-1 text-sm text-muted">GB national wind, day-ahead, January 2026</p>
+          </div>
+          <nav className="flex gap-6 text-sm" aria-label="Screens">
+            {PAGES.map((p) => (
+              <a
+                key={p.id}
+                href={`#/${p.id}`}
+                aria-current={page === p.id ? "page" : undefined}
+                className={
+                  page === p.id
+                    ? "border-b-2 border-forecast pb-1 font-medium text-ink"
+                    : "border-b-2 border-transparent pb-1 text-muted hover:text-ink"
+                }
+              >
+                {p.label}
+              </a>
+            ))}
+          </nav>
+          {meta.status === "ready" && date !== null && cutoff !== null && (
+            <Controls meta={meta.data} date={date} cutoff={cutoff} onDate={setDate} onCutoff={setCutoff} />
+          )}
+        </div>
+      </header>
 
-      <section className="mt-10 rounded border border-slate-200 p-5">
-        <h2 className="text-sm font-medium uppercase tracking-wide text-slate-500">API status</h2>
-        <StatusBody state={state} />
-        <p className="mt-4 text-xs text-slate-400">{API_BASE_URL}/api/health</p>
-      </section>
-
-      <p className="mt-8 text-sm text-slate-500">Placeholder page. The dashboard screens are built in later phases.</p>
-    </main>
+      <main className="mx-auto max-w-[1180px] px-6 py-8">
+        {meta.status === "loading" && <p className="text-muted">Loading the January dataset…</p>}
+        {meta.status === "failed" && (
+          <p className="text-short">
+            Can't reach the API ({meta.message}). Check that the backend is running and that data has been ingested.
+          </p>
+        )}
+        {meta.status === "ready" && date !== null && cutoff !== null && page === "day" && (
+          <Dashboard date={date} cutoff={cutoff} />
+        )}
+      </main>
+    </div>
   );
 }
 
-function StatusBody({ state }: { state: State }) {
-  if (state.kind === "loading") return <p className="mt-3">Checking…</p>;
-  if (state.kind === "failed") return <p className="mt-3 text-red-700">Could not reach the API: {state.message}</p>;
-
-  const { health } = state;
-  const ok = health.status === "ok";
+function Controls(props: {
+  meta: Meta;
+  date: string;
+  cutoff: number;
+  onDate: (d: string) => void;
+  onCutoff: (c: number) => void;
+}) {
+  const { meta, date, cutoff, onDate, onCutoff } = props;
   return (
-    <dl className="mt-3 grid grid-cols-[8rem_1fr] gap-y-1 text-sm">
-      <dt className="text-slate-500">status</dt>
-      <dd className={ok ? "font-medium text-green-700" : "font-medium text-red-700"}>{health.status}</dd>
-      <dt className="text-slate-500">database</dt>
-      <dd>{health.db}</dd>
-      {Object.entries(health.rows).map(([table, n]) => (
-        <div key={table} className="contents">
-          <dt className="text-slate-500">{table}</dt>
-          <dd>{n === null ? "table not created yet" : `${n.toLocaleString()} rows`}</dd>
-        </div>
-      ))}
-    </dl>
+    <div className="ml-auto flex flex-wrap items-end gap-5 text-sm">
+      <label className="flex flex-col gap-1">
+        <span className="text-muted">Delivery day</span>
+        <input
+          type="date"
+          value={date}
+          min={meta.date_from}
+          max={meta.date_to}
+          onChange={(e) => e.target.value && onDate(e.target.value)}
+          className="rounded-[3px] border border-rule bg-panel px-2 py-1"
+        />
+      </label>
+      <label className="flex flex-col gap-1">
+        <span className="text-muted">Decision cut-off (D-1, UTC)</span>
+        <select
+          value={cutoff}
+          onChange={(e) => onCutoff(Number(e.target.value))}
+          className="rounded-[3px] border border-rule bg-panel px-2 py-1"
+        >
+          {Array.from({ length: 24 }, (_, h) => (
+            <option key={h} value={h}>
+              {hourLabel(h)}
+              {h === meta.default_cutoff_hour ? " (default)" : ""}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
   );
 }
